@@ -1,71 +1,179 @@
+// import React, { useEffect, useState } from "react";
+// import { View, Text, FlatList, TouchableOpacity, StyleSheet } from "react-native";
+// import axios from "axios";
+// import { router } from "expo-router";
+
+// export default function QuranScreen() {
+//   const [surahs, setSurahs] = useState<any[]>([]);
+
+//   useEffect(() => {
+//     fetchSurahs();
+//   }, []);
+
+//   const fetchSurahs = async () => {
+//     const res = await axios.get(
+//       "https://api.alquran.cloud/v1/surah"
+//     );
+
+//     setSurahs(res.data.data);
+//   };
+
+//   return (
+//     <View style={styles.container}>
+//       <FlatList
+//         data={surahs}
+//         keyExtractor={(item) => item.number.toString()}
+//         renderItem={({ item }) => (
+//           <TouchableOpacity
+//             style={styles.card}
+//             onPress={() =>
+//               router.push(`/surah/${item.number}`)
+//             }
+//           >
+//             <Text style={styles.title}>
+//               {item.number}. {item.englishName}
+//             </Text>
+
+//             <Text style={styles.arabic}>
+//               {item.name}
+//             </Text>
+//           </TouchableOpacity>
+//         )}
+//       />
+//     </View>
+//   );
+// }
+
+// const styles = StyleSheet.create({
+//   container: {
+//     flex: 1,
+//     padding: 10,
+//     backgroundColor: "#fff",
+//   },
+
+//   card: {
+//     backgroundColor: "#f2f2f2",
+//     padding: 15,
+//     borderRadius: 10,
+//     marginBottom: 10,
+//   },
+
+//   title: {
+//     fontSize: 18,
+//     fontWeight: "bold",
+//   },
+
+//   arabic: {
+//     fontSize: 22,
+//     textAlign: "right",
+//     marginTop: 8,
+//   },
+// });
+
+
 import React, { useEffect, useState } from "react";
-import { View, Text, FlatList, TouchableOpacity, StyleSheet } from "react-native";
-import axios from "axios";
-import { router } from "expo-router";
+import { FlatList, Text, TouchableOpacity, View } from "react-native";
+
+const TABS = ["Surah", "Para", "Manzil", "Sajdah"];
 
 export default function QuranScreen() {
-  const [surahs, setSurahs] = useState<any[]>([]);
+  const [tab, setTab] = useState("Surah");
+  const [surah, setSurah] = useState([]);
 
   useEffect(() => {
-    fetchSurahs();
+    fetch("https://api.alquran.cloud/v1/surah")
+      .then(res => res.json())
+      .then(data => setSurah(data.data));
   }, []);
 
-  const fetchSurahs = async () => {
-    const res = await axios.get(
-      "https://api.alquran.cloud/v1/surah"
-    );
-
-    setSurahs(res.data.data);
+  const getIcon = (revelation) => {
+    return revelation === "Meccan" ? "🕋" : "🕌";
   };
 
   return (
-    <View style={styles.container}>
-      <FlatList
-        data={surahs}
-        keyExtractor={(item) => item.number.toString()}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={styles.card}
-            onPress={() =>
-              router.push(`/surah/${item.number}`)
-            }
-          >
-            <Text style={styles.title}>
-              {item.number}. {item.englishName}
-            </Text>
+    <View style={{ flex: 1, backgroundColor: "#0b1220", padding: 10 }}>
 
-            <Text style={styles.arabic}>
-              {item.name}
-            </Text>
+      {/* HEADER */}
+      <Text style={{ color: "white", fontSize: 24, fontWeight: "bold" }}>
+        📖 Holy Quran
+      </Text>
+
+      {/* TABS */}
+      <View style={{ flexDirection: "row", marginVertical: 15 }}>
+        {TABS.map((t) => (
+          <TouchableOpacity
+            key={t}
+            onPress={() => setTab(t)}
+            style={{
+              padding: 10,
+              marginRight: 10,
+              backgroundColor: tab === t ? "#22c55e" : "#1f2937",
+              borderRadius: 20,
+            }}
+          >
+            <Text style={{ color: "white" }}>{t}</Text>
           </TouchableOpacity>
-        )}
-      />
+        ))}
+      </View>
+
+      {/* SURAH TAB */}
+      {tab === "Surah" && (
+        <FlatList
+          data={surah}
+          keyExtractor={(item) => item.number.toString()}
+          renderItem={({ item }) => (
+            <View
+              style={{
+                padding: 12,
+                backgroundColor: "#111827",
+                marginBottom: 10,
+                borderRadius: 12,
+              }}
+            >
+              <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                
+                {/* LEFT */}
+                <View>
+                  <Text style={{ color: "white", fontSize: 16 }}>
+                    {item.number}. {item.englishName}
+                  </Text>
+
+                  <Text style={{ color: "#94a3b8" }}>
+                    {item.name}
+                  </Text>
+                </View>
+
+                {/* RIGHT ICON */}
+                <Text style={{ fontSize: 22 }}>
+                  {getIcon(item.revelationType)}
+                </Text>
+
+              </View>
+
+              {/* ACTIONS */}
+              <View style={{ flexDirection: "row", marginTop: 10 }}>
+                <Text style={{ color: "#22c55e", marginRight: 15 }}>
+                  ▶ Play
+                </Text>
+                <Text style={{ color: "#60a5fa" }}>
+                  ⬇ Download
+                </Text>
+              </View>
+
+            </View>
+          )}
+        />
+      )}
+
+      {/* PLACEHOLDERS */}
+      {tab !== "Surah" && (
+        <View style={{ marginTop: 50, alignItems: "center" }}>
+          <Text style={{ color: "#94a3b8" }}>
+            {tab} coming soon...
+          </Text>
+        </View>
+      )}
+
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 10,
-    backgroundColor: "#fff",
-  },
-
-  card: {
-    backgroundColor: "#f2f2f2",
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 10,
-  },
-
-  title: {
-    fontSize: 18,
-    fontWeight: "bold",
-  },
-
-  arabic: {
-    fontSize: 22,
-    textAlign: "right",
-    marginTop: 8,
-  },
-});
