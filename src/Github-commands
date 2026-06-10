@@ -3,3 +3,38 @@ After editing files:
 1. Check what changed
 
                 git status
+
+2. Add changes (stage them)
+
+               git add .
+
+3. Save changes (commit)
+               git commit -m "describe what you changed"
+
+4. Upload to GitHub (push)
+               git push origin main
+
+5. Full cycle after coding
+               git status
+               git add .
+               git commit -m "update code"
+               git push origin main
+
+
+6. On another PC (IMPORTANT)
+
+     Before starting work on another computer:
+
+                       git pull origin main
+⚠️ Simple rule to remember
+💻 After coding (send changes):
+add → commit → push
+🖥 Before coding (get latest):
+pull
+🔥 Real-life example
+You changed code on PC A:
+                        git add .
+                        git commit -m "added new feature"
+                        git push origin main
+Now on PC B:
+                        git pull origin main

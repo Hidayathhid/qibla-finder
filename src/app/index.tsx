@@ -811,11 +811,174 @@
 //   );
 // }
 
+// import { router } from 'expo-router';
+// import React from 'react';
+// import {
+//   FlatList,
+//   ImageBackground,
+//   SafeAreaView,
+//   StatusBar,
+//   StyleSheet,
+//   Text,
+//   TouchableOpacity,
+//   View,
+// } from 'react-native';
+
+// const menuItems = [
+//   { id: '1', title: 'Start Reading', color1: '#1FBF9F', color2: '#1E9B83', icon: '📖', route: '/quran' },
+//   { id: '2', title: 'Continue Reading', color1: '#22C55E', color2: '#16A34A', icon: '▶️', route: '/continue' },
+//   { id: '3', title: 'Prayer Times', color1: '#14B8A6', color2: '#0F766E', icon: '🕒', route: '/prayer' },
+//   { id: '4', title: 'Qibla Direction', color1: '#F59E0B', color2: '#D97706', icon: '🧭', route: '/qibla' },
+//   { id: '5', title: 'Mosque Finder', color1: '#34D399', color2: '#10B981', icon: '🕌', route: '/mosques' },
+//   { id: '6', title: 'Zakat Calculator', color1: '#F59E0B', color2: '#D97706', icon: '🧮', route: '/zakat' },
+//   { id: '7', title: 'Tasbeeh Counter', color1: '#8B5CF6', color2: '#7C3AED', icon: '📿', route: '/tasbih' },
+//   { id: '8', title: 'Bookmarks', color1: '#A855F7', color2: '#9333EA', icon: '🔖', route: '/bookmarks' },
+// ];
+
+// const MenuCard = ({ item }) => {
+//   return (
+//     <TouchableOpacity
+//       activeOpacity={0.8}
+//       onPress={() => item.route && router.push(item.route)}
+//       style={[
+//         styles.card,
+//         {
+//           backgroundColor: item.color1,
+//           borderLeftColor: item.color2,
+//         },
+//       ]}
+//     >
+//       <View style={styles.leftContent}>
+//         <View style={styles.iconContainer}>
+//           <Text style={styles.icon}>{item.icon}</Text>
+//         </View>
+
+//         <Text style={styles.title}>{item.title}</Text>
+//       </View>
+
+//       <Text style={styles.arrow}>›</Text>
+//     </TouchableOpacity>
+//   );
+// };
+
+// export default function App() {
+//   return (
+//     <ImageBackground
+//       source={{
+//         uri: 'https://images.unsplash.com/photo-1731405717211-00dc10f91792?q=80&w=800&auto=format&fit=crop',
+//       }}
+//       style={styles.background}
+//       resizeMode="cover"
+//     >
+//       <View style={styles.overlay} />
+
+//       <SafeAreaView style={styles.container}>
+//         <StatusBar barStyle="light-content" />
+
+//         <View style={styles.header}>
+//           <Text style={styles.name}>Kanzul Iman</Text>
+//           <Text style={styles.sub}>Home</Text>
+//         </View>
+
+//         <FlatList
+//           data={menuItems}
+//           keyExtractor={(item) => item.id}
+//           renderItem={({ item }) => <MenuCard item={item} />}
+//           contentContainerStyle={{ paddingBottom: 30 }}
+//           showsVerticalScrollIndicator={false}
+//         />
+//       </SafeAreaView>
+//     </ImageBackground>
+//   );
+// }
+
+// const styles = StyleSheet.create({
+//   background: {
+//     flex: 1,
+//   },
+
+//   overlay: {
+//     ...StyleSheet.absoluteFillObject,
+//     backgroundColor: 'rgba(0,0,0,0.45)',
+//   },
+
+//   container: {
+//     flex: 1,
+//     paddingHorizontal: 22,
+//     paddingTop: 20,
+//   },
+
+//   header: {
+//     marginBottom: 25,
+//   },
+
+//   name: {
+//     color: '#fff',
+//     fontSize: 26,
+//     fontWeight: '700',
+//   },
+
+//   sub: {
+//     color: '#CFFAFE',
+//     marginTop: 4,
+//     fontSize: 14,
+//   },
+
+//   card: {
+//     height: 72,
+//     borderRadius: 20,
+//     marginBottom: 15,
+//     marginLeft: 30,
+//     marginRight: 30,
+//     paddingHorizontal: 18,
+//     flexDirection: 'row',
+//     alignItems: 'center',
+//     justifyContent: 'space-between',
+//     borderLeftWidth: 4,
+
+//     shadowColor: '#000',
+//     shadowOffset: { width: 0, height: 4 },
+//     shadowOpacity: 0.2,
+//     shadowRadius: 5,
+//     elevation: 5,
+//   },
+
+//   leftContent: {
+//     flexDirection: 'row',
+//     alignItems: 'center',
+//   },
+
+//   iconContainer: {
+//     width: 42,
+//     height: 42,
+//     borderRadius: 14,
+//     backgroundColor: 'rgba(255,255,255,0.18)',
+//     justifyContent: 'center',
+//     alignItems: 'center',
+//     marginRight: 14,
+//   },
+
+//   icon: {
+//     fontSize: 20,
+//   },
+
+//   title: {
+//     color: '#fff',
+//     fontSize: 17,
+//     fontWeight: '600',
+//   },
+
+//   arrow: {
+//     color: '#fff',
+//     fontSize: 29,
+//     fontWeight: '300',
+//   },
+// });
+
 import { router } from 'expo-router';
-import React from 'react';
+import React, { useState } from 'react';
 import {
   FlatList,
-  ImageBackground,
   SafeAreaView,
   StatusBar,
   StyleSheet,
@@ -838,7 +1001,7 @@ const menuItems = [
 const MenuCard = ({ item }) => {
   return (
     <TouchableOpacity
-      activeOpacity={0.8}
+      activeOpacity={0.85}
       onPress={() => item.route && router.push(item.route)}
       style={[
         styles.card,
@@ -852,32 +1015,46 @@ const MenuCard = ({ item }) => {
         <View style={styles.iconContainer}>
           <Text style={styles.icon}>{item.icon}</Text>
         </View>
-
         <Text style={styles.title}>{item.title}</Text>
       </View>
-
       <Text style={styles.arrow}>›</Text>
     </TouchableOpacity>
   );
 };
 
 export default function App() {
+  const [isDark, setIsDark] = useState(true); // initial theme dark
+
+  const theme = {
+    background: isDark ? '#020617' : '#F8FAFC',
+    headerText: isDark ? '#FFFFFF' : '#0F172A',
+    subText: isDark ? '#CBD5E1' : '#64748B',
+    statusBar: isDark ? 'light-content' : 'dark-content',
+    cardText: isDark ? '#FFFFFF' : '#FFFFFF',
+  };
+
   return (
-    <ImageBackground
-      source={{
-        uri: 'https://images.unsplash.com/photo-1731405717211-00dc10f91792?q=80&w=800&auto=format&fit=crop',
-      }}
-      style={styles.background}
-      resizeMode="cover"
-    >
-      <View style={styles.overlay} />
-
+    <View style={[styles.background, { backgroundColor: theme.background }]}>
       <SafeAreaView style={styles.container}>
-        <StatusBar barStyle="light-content" />
+        <StatusBar barStyle={theme.statusBar} backgroundColor={theme.background} />
 
+        {/* Header + Theme Toggle */}
         <View style={styles.header}>
-          <Text style={styles.name}>Kanzul Iman</Text>
-          <Text style={styles.sub}>Home</Text>
+          <Text style={[styles.name, { color: theme.headerText }]}></Text>
+          <Text style={[styles.sub, { color: theme.subText }]}>Islamic App</Text>
+
+          {/* Theme Toggle Button */}
+          <TouchableOpacity
+            style={[
+              styles.themeButton,
+              { backgroundColor: isDark ? '#64748B' : '#0F172A' },
+            ]}
+            onPress={() => setIsDark(!isDark)}
+          >
+            <Text style={{ color: '#fff', fontWeight: '600' }}>
+              {isDark ? '🌞 Light Mode' : '🌙 Dark Mode'}
+            </Text>
+          </TouchableOpacity>
         </View>
 
         <FlatList
@@ -888,7 +1065,7 @@ export default function App() {
           showsVerticalScrollIndicator={false}
         />
       </SafeAreaView>
-    </ImageBackground>
+    </View>
   );
 }
 
@@ -896,34 +1073,29 @@ const styles = StyleSheet.create({
   background: {
     flex: 1,
   },
-
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.45)',
-  },
-
   container: {
     flex: 1,
     paddingHorizontal: 22,
     paddingTop: 20,
   },
-
   header: {
     marginBottom: 25,
   },
-
   name: {
-    color: '#fff',
-    fontSize: 26,
+    fontSize: 28,
     fontWeight: '700',
   },
-
   sub: {
-    color: '#CFFAFE',
     marginTop: 4,
     fontSize: 14,
   },
-
+  themeButton: {
+    marginTop: 10,
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    borderRadius: 20,
+    alignSelf: 'flex-start',
+  },
   card: {
     height: 72,
     borderRadius: 20,
@@ -935,19 +1107,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     borderLeftWidth: 4,
-
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 5,
     elevation: 5,
   },
-
   leftContent: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-
   iconContainer: {
     width: 42,
     height: 42,
@@ -957,20 +1126,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 14,
   },
-
   icon: {
     fontSize: 20,
   },
-
   title: {
-    color: '#fff',
     fontSize: 17,
     fontWeight: '600',
-  },
-
-  arrow: {
     color: '#fff',
+  },
+  arrow: {
     fontSize: 29,
     fontWeight: '300',
+    color: '#fff',
   },
 });
