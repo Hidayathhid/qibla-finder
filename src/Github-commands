@@ -1,0 +1,5 @@
+After editing files:
+
+1. Check what changed
+
+                git status
