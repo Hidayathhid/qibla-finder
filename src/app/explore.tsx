@@ -1,181 +1,408 @@
-import { Image } from 'expo-image';
-import { SymbolView } from 'expo-symbols';
-import React from 'react';
-import { Platform, Pressable, ScrollView, StyleSheet } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+// // src/app/explore.tsx
+// //
+// // Mosque Finder. Uses Google Places API (Nearby Search) directly from the client.
+// // You MUST restrict this API key in Google Cloud Console (Android app restriction +
+// // Places API only) since there's no backend to hide it behind.
+// //
+// // Get a key: https://console.cloud.google.com/apis/credentials
+// // Enable: "Places API"
 
-import { ExternalLink } from '@/components/external-link';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Collapsible } from '@/components/ui/collapsible';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
+// import * as Linking from "expo-linking";
+// import { getDistance } from "geolib";
+// import React, { useEffect, useState } from "react";
+// import { ActivityIndicator, FlatList, Text, TouchableOpacity, View } from "react-native";
+// import { COLORS } from "@/constants/quranMeta";
+// import { useLocation } from "@/hooks/useLocation";
 
-export default function TabTwoScreen() {
-  const safeAreaInsets = useSafeAreaInsets();
-  const insets = {
-    ...safeAreaInsets,
-    bottom: safeAreaInsets.bottom + BottomTabInset + Spacing.three,
+// const GOOGLE_PLACES_API_KEY = "YOUR_GOOGLE_PLACES_API_KEY_HERE";
+
+// type Mosque = {
+//   place_id: string;
+//   name: string;
+//   vicinity: string;
+//   geometry: { location: { lat: number; lng: number } };
+// };
+
+// export default function MosqueFinderScreen() {
+//   const { latitude, longitude, loading: locLoading, permissionDenied } = useLocation();
+//   const [mosques, setMosques] = useState<(Mosque & { distanceMeters: number })[]>([]);
+//   const [loading, setLoading] = useState(true);
+//   const [error, setError] = useState<string | null>(null);
+
+//   useEffect(() => {
+//     if (latitude == null || longitude == null) return;
+
+//     if (GOOGLE_PLACES_API_KEY === "YOUR_GOOGLE_PLACES_API_KEY_HERE") {
+//       setError("Add your Google Places API key in src/app/explore.tsx to enable Mosque Finder.");
+//       setLoading(false);
+//       return;
+//     }
+
+//     const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${latitude},${longitude}&radius=5000&type=mosque&key=${GOOGLE_PLACES_API_KEY}`;
+
+//     fetch(url)
+//       .then((res) => res.json())
+//       .then((json) => {
+//         const results: Mosque[] = json.results ?? [];
+//         const withDistance = results
+//           .map((m) => ({
+//             ...m,
+//             distanceMeters: getDistance(
+//               { latitude, longitude },
+//               { latitude: m.geometry.location.lat, longitude: m.geometry.location.lng }
+//             ),
+//           }))
+//           .sort((a, b) => a.distanceMeters - b.distanceMeters);
+//         setMosques(withDistance);
+//       })
+//       .catch(() => setError("Could not load nearby mosques. Check your connection."))
+//       .finally(() => setLoading(false));
+//   }, [latitude, longitude]);
+
+//   const openInMaps = (mosque: Mosque) => {
+//     const { lat, lng } = mosque.geometry.location;
+//     const label = encodeURIComponent(mosque.name);
+//     Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${lat},${lng}&query_place_id=${mosque.place_id}&q=${label}`);
+//   };
+
+//   if (locLoading || loading) {
+//     return (
+//       <View style={{ flex: 1, backgroundColor: COLORS.bg, justifyContent: "center", alignItems: "center" }}>
+//         <ActivityIndicator color={COLORS.accent} size="large" />
+//       </View>
+//     );
+//   }
+
+//   if (permissionDenied) {
+//     return (
+//       <View style={{ flex: 1, backgroundColor: COLORS.bg, justifyContent: "center", alignItems: "center", padding: 24 }}>
+//         <Text style={{ color: COLORS.textPrimary, textAlign: "center" }}>
+//           Location access is needed to find mosques near you.
+//         </Text>
+//       </View>
+//     );
+//   }
+
+//   if (error) {
+//     return (
+//       <View style={{ flex: 1, backgroundColor: COLORS.bg, justifyContent: "center", alignItems: "center", padding: 24 }}>
+//         <Text style={{ color: COLORS.textSecondary, textAlign: "center" }}>{error}</Text>
+//       </View>
+//     );
+//   }
+
+//   return (
+//     <View style={{ flex: 1, backgroundColor: COLORS.bg, padding: 10 }}>
+//       <Text style={{ color: COLORS.textPrimary, fontSize: 24, fontWeight: "bold", margin: 10 }}>
+//         🕌 Nearby Mosques
+//       </Text>
+//       <FlatList
+//         data={mosques}
+//         keyExtractor={(item) => item.place_id}
+//         renderItem={({ item }) => (
+//           <TouchableOpacity
+//             onPress={() => openInMaps(item)}
+//             style={{ padding: 16, backgroundColor: COLORS.card, marginBottom: 8, borderRadius: 12 }}
+//           >
+//             <Text style={{ color: COLORS.textPrimary, fontSize: 16 }}>{item.name}</Text>
+//             <Text style={{ color: COLORS.textSecondary, marginTop: 4, fontSize: 13 }}>{item.vicinity}</Text>
+//             <Text style={{ color: COLORS.accent, marginTop: 4, fontSize: 12 }}>
+//               {(item.distanceMeters / 1000).toFixed(1)} km away · Tap to open in Maps
+//             </Text>
+//           </TouchableOpacity>
+//         )}
+//       />
+//     </View>
+//   );
+// }
+
+
+// src/app/explore.tsx
+
+import * as Linking from "expo-linking";
+import { getDistance } from "geolib";
+import React, { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  FlatList,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+
+import { COLORS } from "@/constants/quranMeta";
+import { useLocation } from "@/hooks/useLocation";
+
+type Mosque = {
+  place_id: string;
+  name: string;
+  vicinity: string;
+  geometry: {
+    location: {
+      lat: number;
+      lng: number;
+    };
   };
-  const theme = useTheme();
+};
 
-  const contentPlatformStyle = Platform.select({
-    android: {
-      paddingTop: insets.top,
-      paddingLeft: insets.left,
-      paddingRight: insets.right,
-      paddingBottom: insets.bottom,
-    },
-    web: {
-      paddingTop: Spacing.six,
-      paddingBottom: Spacing.four,
-    },
-  });
+export default function MosqueFinderScreen() {
+  const {
+    latitude,
+    longitude,
+    loading: locLoading,
+    permissionDenied,
+  } = useLocation();
+
+  const [mosques, setMosques] = useState<
+    (Mosque & { distanceMeters: number })[]
+  >([]);
+
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (latitude == null || longitude == null) return;
+
+    loadMosques();
+  }, [latitude, longitude]);
+
+  const loadMosques = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const radius = 5000;
+
+      const query = `
+[out:json];
+(
+  node["amenity"="place_of_worship"]["religion"="muslim"](around:${radius},${latitude},${longitude});
+  way["amenity"="place_of_worship"]["religion"="muslim"](around:${radius},${latitude},${longitude});
+  relation["amenity"="place_of_worship"]["religion"="muslim"](around:${radius},${latitude},${longitude});
+);
+out center;
+`;
+
+      const response = await fetch(
+        "https://overpass-api.de/api/interpreter",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "text/plain",
+          },
+          body: query,
+        }
+      );
+
+      const json = await response.json();
+
+      const results: Mosque[] = (json.elements || []).map((item: any) => ({
+        place_id: String(item.id),
+        name: item.tags?.name || "Mosque",
+        vicinity:
+          item.tags?.["addr:street"] ||
+          item.tags?.addr?.street ||
+          item.tags?.["addr:city"] ||
+          item.tags?.["addr:suburb"] ||
+          "Nearby Mosque",
+        geometry: {
+          location: {
+            lat: item.lat ?? item.center?.lat,
+            lng: item.lon ?? item.center?.lon,
+          },
+        },
+      }));
+
+      const validResults = results.filter(
+        (m) =>
+          m.geometry.location.lat != null &&
+          m.geometry.location.lng != null
+      );
+
+      const withDistance = validResults
+        .map((m) => ({
+          ...m,
+          distanceMeters: getDistance(
+            {
+              latitude,
+              longitude,
+            },
+            {
+              latitude: m.geometry.location.lat,
+              longitude: m.geometry.location.lng,
+            }
+          ),
+        }))
+        .sort((a, b) => a.distanceMeters - b.distanceMeters);
+
+      setMosques(withDistance);
+    } catch (e) {
+      console.log(e);
+      setError("Unable to load nearby mosques.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const openInMaps = (mosque: Mosque) => {
+    const { lat, lng } = mosque.geometry.location;
+
+    Linking.openURL(
+      `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`
+    );
+  };
+
+  if (locLoading || loading) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: COLORS.bg,
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        <ActivityIndicator
+          size="large"
+          color={COLORS.accent}
+        />
+      </View>
+    );
+  }
+
+  if (permissionDenied) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: COLORS.bg,
+          justifyContent: "center",
+          alignItems: "center",
+          padding: 24,
+        }}
+      >
+        <Text
+          style={{
+            color: COLORS.textPrimary,
+            textAlign: "center",
+            fontSize: 16,
+          }}
+        >
+          Location permission is required to find nearby mosques.
+        </Text>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: COLORS.bg,
+          justifyContent: "center",
+          alignItems: "center",
+          padding: 24,
+        }}
+      >
+        <Text
+          style={{
+            color: COLORS.textSecondary,
+            textAlign: "center",
+          }}
+        >
+          {error}
+        </Text>
+      </View>
+    );
+  }
+
+  if (mosques.length === 0) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: COLORS.bg,
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        <Text
+          style={{
+            color: COLORS.textSecondary,
+          }}
+        >
+          No nearby mosques found.
+        </Text>
+      </View>
+    );
+  }
 
   return (
-    <ScrollView
-      style={[styles.scrollView, { backgroundColor: theme.background }]}
-      contentInset={insets}
-      contentContainerStyle={[styles.contentContainer, contentPlatformStyle]}>
-      <ThemedView style={styles.container}>
-        <ThemedView style={styles.titleContainer}>
-          <ThemedText type="subtitle">Explore</ThemedText>
-          <ThemedText style={styles.centerText} themeColor="textSecondary">
-            This starter app includes example{'\n'}code to help you get started.
-          </ThemedText>
+    <View
+      style={{
+        flex: 1,
+        backgroundColor: COLORS.bg,
+        padding: 10,
+      }}
+    >
+      <Text
+        style={{
+          color: COLORS.textPrimary,
+          fontSize: 24,
+          fontWeight: "bold",
+          margin: 10,
+        }}
+      >
+        🕌 Nearby Mosques
+      </Text>
 
-          <ExternalLink href="https://docs.expo.dev" asChild>
-            <Pressable style={({ pressed }) => pressed && styles.pressed}>
-              <ThemedView type="backgroundElement" style={styles.linkButton}>
-                <ThemedText type="link">Expo documentation</ThemedText>
-                <SymbolView
-                  tintColor={theme.text}
-                  name={{ ios: 'arrow.up.right.square', android: 'link', web: 'link' }}
-                  size={12}
-                />
-              </ThemedView>
-            </Pressable>
-          </ExternalLink>
-        </ThemedView>
+      <FlatList
+        data={mosques}
+        keyExtractor={(item) => item.place_id}
+        showsVerticalScrollIndicator={false}
+        renderItem={({ item }) => (
+          <TouchableOpacity
+            onPress={() => openInMaps(item)}
+            style={{
+              backgroundColor: COLORS.card,
+              borderRadius: 12,
+              padding: 16,
+              marginBottom: 10,
+            }}
+          >
+            <Text
+              style={{
+                color: COLORS.textPrimary,
+                fontSize: 17,
+                fontWeight: "600",
+              }}
+            >
+              {item.name}
+            </Text>
 
-        <ThemedView style={styles.sectionsWrapper}>
-          <Collapsible title="File-based routing">
-            <ThemedText type="small">
-              This app has two screens: <ThemedText type="code">src/app/index.tsx</ThemedText> and{' '}
-              <ThemedText type="code">src/app/explore.tsx</ThemedText>
-            </ThemedText>
-            <ThemedText type="small">
-              The layout file in <ThemedText type="code">src/app/_layout.tsx</ThemedText> sets up
-              the tab navigator.
-            </ThemedText>
-            <ExternalLink href="https://docs.expo.dev/router/introduction">
-              <ThemedText type="linkPrimary">Learn more</ThemedText>
-            </ExternalLink>
-          </Collapsible>
+            <Text
+              style={{
+                color: COLORS.textSecondary,
+                marginTop: 5,
+              }}
+            >
+              {item.vicinity}
+            </Text>
 
-          <Collapsible title="Android, iOS, and web support">
-            <ThemedView type="backgroundElement" style={styles.collapsibleContent}>
-              <ThemedText type="small">
-                You can open this project on Android, iOS, and the web. To open the web version,
-                press <ThemedText type="smallBold">w</ThemedText> in the terminal running this
-                project.
-              </ThemedText>
-              <Image
-                source={require('@/assets/images/tutorial-web.png')}
-                style={styles.imageTutorial}
-              />
-            </ThemedView>
-          </Collapsible>
-
-          <Collapsible title="Images">
-            <ThemedText type="small">
-              For static images, you can use the <ThemedText type="code">@2x</ThemedText> and{' '}
-              <ThemedText type="code">@3x</ThemedText> suffixes to provide files for different
-              screen densities.
-            </ThemedText>
-            <Image source={require('@/assets/images/react-logo.png')} style={styles.imageReact} />
-            <ExternalLink href="https://reactnative.dev/docs/images">
-              <ThemedText type="linkPrimary">Learn more</ThemedText>
-            </ExternalLink>
-          </Collapsible>
-
-          <Collapsible title="Light and dark mode components">
-            <ThemedText type="small">
-              This template has light and dark mode support. The{' '}
-              <ThemedText type="code">useColorScheme()</ThemedText> hook lets you inspect what the
-              user&apos;s current color scheme is, and so you can adjust UI colors accordingly.
-            </ThemedText>
-            <ExternalLink href="https://docs.expo.dev/develop/user-interface/color-themes/">
-              <ThemedText type="linkPrimary">Learn more</ThemedText>
-            </ExternalLink>
-          </Collapsible>
-
-          <Collapsible title="Animations">
-            <ThemedText type="small">
-              This template includes an example of an animated component. The{' '}
-              <ThemedText type="code">src/components/ui/collapsible.tsx</ThemedText> component uses
-              the powerful <ThemedText type="code">react-native-reanimated</ThemedText> library to
-              animate opening this hint.
-            </ThemedText>
-          </Collapsible>
-        </ThemedView>
-        {Platform.OS === 'web' && <WebBadge />}
-      </ThemedView>
-    </ScrollView>
+            <Text
+              style={{
+                color: COLORS.accent,
+                marginTop: 8,
+                fontSize: 13,
+              }}
+            >
+              {(item.distanceMeters / 1000).toFixed(2)} km away • Tap to open
+              in Google Maps
+            </Text>
+          </TouchableOpacity>
+        )}
+      />
+    </View>
   );
 }
-
-const styles = StyleSheet.create({
-  scrollView: {
-    flex: 1,
-  },
-  contentContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-  },
-  container: {
-    maxWidth: MaxContentWidth,
-    flexGrow: 1,
-  },
-  titleContainer: {
-    gap: Spacing.three,
-    alignItems: 'center',
-    paddingHorizontal: Spacing.four,
-    paddingVertical: Spacing.six,
-  },
-  centerText: {
-    textAlign: 'center',
-  },
-  pressed: {
-    opacity: 0.7,
-  },
-  linkButton: {
-    flexDirection: 'row',
-    paddingHorizontal: Spacing.four,
-    paddingVertical: Spacing.two,
-    borderRadius: Spacing.five,
-    justifyContent: 'center',
-    gap: Spacing.one,
-    alignItems: 'center',
-  },
-  sectionsWrapper: {
-    gap: Spacing.five,
-    paddingHorizontal: Spacing.four,
-    paddingTop: Spacing.three,
-  },
-  collapsibleContent: {
-    alignItems: 'center',
-  },
-  imageTutorial: {
-    width: '100%',
-    aspectRatio: 296 / 171,
-    borderRadius: Spacing.three,
-    marginTop: Spacing.two,
-  },
-  imageReact: {
-    width: 100,
-    height: 100,
-    alignSelf: 'center',
-  },
-});

@@ -1,250 +1,190 @@
-// import React, { useEffect, useState } from "react";
-// import { View, Text, FlatList, TouchableOpacity, StyleSheet } from "react-native";
-// import axios from "axios";
-// import { useLocalSearchParams } from "expo-router";
-// import { Audio } from "expo-av";
+// src/app/surah/[id].tsx
+import { Audio, AVPlaybackStatus } from "expo-av";
+import { useLocalSearchParams } from "expo-router";
+import React, { useEffect, useRef, useState } from "react";
+import { ActivityIndicator, FlatList, Text, TouchableOpacity, View } from "react-native";
+import { COLORS } from "@/constants/quranMeta";
+import { AyahData, fetchSurahAyahs } from "@/services/quranApi";
+import { addBookmark, getBookmarks, removeBookmark, setLastRead } from "@/services/storage";
 
-// export default function Surah() {
-//   const { id } = useLocalSearchParams();
-//   const [ayahs, setAyahs] = useState<any[]>([]);
+export default function SurahReaderScreen() {
+  const { id, ayah } = useLocalSearchParams<{ id: string; ayah?: string }>();
+  const surahNumber = Number(id);
 
-//   useEffect(() => {
-//     loadSurah();
-//   }, []);
-
-//   const loadSurah = async () => {
-//     const res = await axios.get(
-//       `https://api.alquran.cloud/v1/surah/${id}/ar.alafasy`
-//     );
-
-//     setAyahs(res.data.data.ayahs);
-//   };
-
-//   const playAudio = async (url: string) => {
-//     const { sound } = await Audio.Sound.createAsync({ uri: url });
-//     await sound.playAsync();
-//   };
-
-//   return (
-//     <View style={styles.container}>
-//       <FlatList
-//         data={ayahs}
-//         keyExtractor={(item) => item.number.toString()}
-//         renderItem={({ item }) => (
-//           <View style={styles.card}>
-//             <Text style={styles.arabic}>{item.text}</Text>
-
-//             <TouchableOpacity
-//               style={styles.btn}
-//               onPress={() => playAudio(item.audio)}
-//             >
-//               <Text style={{ color: "#fff" }}>▶ Play</Text>
-//             </TouchableOpacity>
-//           </View>
-//         )}
-//       />
-//     </View>
-//   );
-// }
-
-// const styles = StyleSheet.create({
-//   container: {
-//     flex: 1,
-//     padding: 10,
-//     backgroundColor: "#fff",
-//   },
-
-//   card: {
-//     backgroundColor: "#f4f4f4",
-//     padding: 15,
-//     marginBottom: 10,
-//     borderRadius: 10,
-//   },
-
-//   arabic: {
-//     fontSize: 26,
-//     textAlign: "right",
-//     lineHeight: 45,
-//   },
-
-//   btn: {
-//     marginTop: 10,
-//     backgroundColor: "green",
-//     padding: 10,
-//     borderRadius: 8,
-//     alignItems: "center",
-//   },
-// });
-
-import React, { useEffect, useState } from "react";
-import { View, Text, FlatList, TouchableOpacity, ActivityIndicator } from "react-native";
-import { Audio } from "expo-av";
-
-export default function SurahScreen() {
-  const [surah, setSurah] = useState([]);
+  const [surahName, setSurahName] = useState("");
+  const [ayahs, setAyahs] = useState<AyahData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const [sound, setSound] = useState(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [currentIndex, setCurrentIndex] = useState(null);
+  const [playingIndex, setPlayingIndex] = useState<number | null>(null);
+  const [highlightIndex, setHighlightIndex] = useState<number | null>(null);
+  const [bookmarkedSet, setBookmarkedSet] = useState<Set<number>>(new Set());
 
-  // 📖 LOAD SURAH LIST
+  const soundRef = useRef<Audio.Sound | null>(null);
+  const listRef = useRef<FlatList>(null);
+
   useEffect(() => {
-    const fetchSurah = async () => {
-      try {
-        const res = await fetch("https://api.alquran.cloud/v1/surah");
-        const json = await res.json();
-        setSurah(json.data);
-      } catch (err) {
-        console.log(err);
-      } finally {
-        setLoading(false);
-      }
-    };
+    let cancelled = false;
 
-    fetchSurah();
-  }, []);
+    fetchSurahAyahs(surahNumber)
+      .then(({ surahName, ayahs }) => {
+        if (cancelled) return;
+        setSurahName(surahName);
+        setAyahs(ayahs);
+      })
+      .catch(() => !cancelled && setError("Could not load this surah. Check your connection."))
+      .finally(() => !cancelled && setLoading(false));
 
-  // 🎧 GET AUDIO URL
-  const getAudioUrl = (number) => {
-    return `https://server8.mp3quran.net/afs/${String(number).padStart(3, "0")}.mp3`;
-  };
-
-  // ▶ PLAY
-  const playAudio = async (item, index) => {
-    try {
-      if (sound) {
-        await sound.unloadAsync();
-      }
-
-      const { sound: newSound } = await Audio.Sound.createAsync(
-        { uri: getAudioUrl(item.number) },
-        { shouldPlay: true }
+    getBookmarks().then((bookmarks) => {
+      if (cancelled) return;
+      const setForThisSurah = new Set(
+        bookmarks.filter((b) => b.surahNumber === surahNumber).map((b) => b.ayahNumber)
       );
+      setBookmarkedSet(setForThisSurah);
+    });
 
-      setSound(newSound);
-      setCurrentIndex(index);
-      setIsPlaying(true);
+    return () => {
+      cancelled = true;
+      soundRef.current?.unloadAsync();
+    };
+  }, [surahNumber]);
 
-      newSound.setOnPlaybackStatusUpdate((status) => {
-        if (status.didJustFinish) {
-          playNext(index);
-        }
-      });
-
-    } catch (err) {
-      console.log(err);
-    }
-  };
-
-  // ⏸ PAUSE / RESUME
-  const togglePlayPause = async () => {
-    if (!sound) return;
-
-    const status = await sound.getStatusAsync();
-
-    if (status.isPlaying) {
-      await sound.pauseAsync();
-      setIsPlaying(false);
-    } else {
-      await sound.playAsync();
-      setIsPlaying(true);
-    }
-  };
-
-  // ⏭ NEXT SURAH
-  const playNext = async (index) => {
-    if (index + 1 < surah.length) {
-      playAudio(surah[index + 1], index + 1);
-    }
-  };
-
-  // ⏮ PREVIOUS SURAH
-  const playPrev = async (index) => {
-    if (index - 1 >= 0) {
-      playAudio(surah[index - 1], index - 1);
-    }
-  };
-
-  // 🧹 CLEANUP
+  // Scroll to and highlight a specific ayah if navigated here from Sajdah list / bookmarks / continue reading
   useEffect(() => {
-    return sound
-      ? () => {
-          sound.unloadAsync();
+    if (!ayah || ayahs.length === 0) return;
+    const index = ayahs.findIndex((a) => a.numberInSurah === Number(ayah));
+    if (index >= 0) {
+      const timeout = setTimeout(() => {
+        listRef.current?.scrollToIndex({ index, animated: true, viewPosition: 0.3 });
+        setHighlightIndex(index);
+        setTimeout(() => setHighlightIndex(null), 3000);
+      }, 300);
+      return () => clearTimeout(timeout);
+    }
+  }, [ayah, ayahs]);
+
+  const playAyah = async (index: number) => {
+    const item = ayahs[index];
+    if (!item?.audio) return;
+
+    if (soundRef.current) {
+      await soundRef.current.unloadAsync();
+    }
+
+    const { sound } = await Audio.Sound.createAsync({ uri: item.audio }, { shouldPlay: true });
+    soundRef.current = sound;
+    setPlayingIndex(index);
+    setLastRead(surahNumber, item.numberInSurah, surahName);
+
+    sound.setOnPlaybackStatusUpdate((status: AVPlaybackStatus) => {
+      if (status.isLoaded && status.didJustFinish) {
+        if (index + 1 < ayahs.length) {
+          playAyah(index + 1);
+        } else {
+          setPlayingIndex(null);
         }
-      : undefined;
-  }, [sound]);
+      }
+    });
+  };
+
+  const stopAudio = async () => {
+    await soundRef.current?.stopAsync();
+    setPlayingIndex(null);
+  };
+
+  const toggleBookmark = async (item: AyahData) => {
+    const already = bookmarkedSet.has(item.numberInSurah);
+    if (already) {
+      await removeBookmark(`${surahNumber}-${item.numberInSurah}`);
+      setBookmarkedSet((prev) => {
+        const next = new Set(prev);
+        next.delete(item.numberInSurah);
+        return next;
+      });
+    } else {
+      await addBookmark(surahNumber, item.numberInSurah, surahName);
+      setBookmarkedSet((prev) => new Set(prev).add(item.numberInSurah));
+    }
+  };
 
   if (loading) {
     return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <ActivityIndicator size="large" />
-        <Text>Loading Quran...</Text>
+      <View style={{ flex: 1, backgroundColor: COLORS.bg, justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator color={COLORS.accent} size="large" />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={{ flex: 1, backgroundColor: COLORS.bg, justifyContent: "center", alignItems: "center", padding: 20 }}>
+        <Text style={{ color: COLORS.danger, textAlign: "center" }}>{error}</Text>
       </View>
     );
   }
 
   return (
-    <View style={{ flex: 1, padding: 15 }}>
-      <Text style={{ fontSize: 22, fontWeight: "bold", marginBottom: 10 }}>
-        📖 Quran Surah
+    <View style={{ flex: 1, backgroundColor: COLORS.bg, padding: 10 }}>
+      <Text style={{ color: COLORS.textPrimary, fontSize: 22, fontWeight: "bold", marginBottom: 10 }}>
+        {surahName}
       </Text>
 
-      {/* 🎛 CONTROL BAR */}
-      {sound && (
-        <View
+      {playingIndex !== null && (
+        <TouchableOpacity
+          onPress={stopAudio}
           style={{
-            flexDirection: "row",
-            justifyContent: "space-around",
-            marginBottom: 15,
-            backgroundColor: "#f2f2f2",
+            backgroundColor: COLORS.cardActive,
             padding: 10,
             borderRadius: 10,
+            marginBottom: 10,
+            alignItems: "center",
           }}
         >
-          <TouchableOpacity onPress={() => playPrev(currentIndex)}>
-            <Text style={{ fontSize: 18 }}>⏮ Prev</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity onPress={togglePlayPause}>
-            <Text style={{ fontSize: 18 }}>
-              {isPlaying ? "⏸ Pause" : "▶ Play"}
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity onPress={() => playNext(currentIndex)}>
-            <Text style={{ fontSize: 18 }}>⏭ Next</Text>
-          </TouchableOpacity>
-        </View>
+          <Text style={{ color: COLORS.textPrimary }}>⏹ Stop</Text>
+        </TouchableOpacity>
       )}
 
-      {/* 📜 SURAH LIST */}
       <FlatList
-        data={surah}
+        ref={listRef}
+        data={ayahs}
         keyExtractor={(item) => item.number.toString()}
-        renderItem={({ item, index }) => (
-          <TouchableOpacity
-            onPress={() => playAudio(item, index)}
-            style={{
-              padding: 12,
-              borderBottomWidth: 1,
-              borderColor: "#ddd",
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-              backgroundColor: currentIndex === index ? "#e8ffe8" : "white",
-            }}
-          >
-            <View>
-              <Text style={{ fontSize: 16, fontWeight: "bold" }}>
-                {item.number}. {item.englishName}
-              </Text>
-              <Text style={{ color: "gray" }}>{item.name}</Text>
-            </View>
+        onScrollToIndexFailed={(info) => {
+          // Long surahs can fail to scroll to a far-off index on first try; retry with an offset estimate.
+          setTimeout(() => {
+            listRef.current?.scrollToOffset({ offset: info.averageItemLength * info.index, animated: true });
+          }, 100);
+        }}
+        renderItem={({ item, index }) => {
+          const bookmarked = bookmarkedSet.has(item.numberInSurah);
+          return (
+            <View
+              style={{
+                padding: 16,
+                backgroundColor:
+                  highlightIndex === index ? COLORS.accent : playingIndex === index ? COLORS.cardActive : COLORS.card,
+                marginBottom: 8,
+                borderRadius: 12,
+              }}
+            >
+              <TouchableOpacity onPress={() => playAyah(index)}>
+                <Text style={{ color: COLORS.textPrimary, fontSize: 22, textAlign: "right", lineHeight: 38 }}>
+                  {item.text} ﴿{item.numberInSurah}﴾
+                </Text>
+                {item.translation && (
+                  <Text style={{ color: COLORS.textSecondary, marginTop: 8 }}>{item.translation}</Text>
+                )}
+              </TouchableOpacity>
 
-            <Text style={{ color: "green" }}>▶</Text>
-          </TouchableOpacity>
-        )}
+              <View style={{ flexDirection: "row", marginTop: 10, justifyContent: "flex-end" }}>
+                <TouchableOpacity onPress={() => toggleBookmark(item)} style={{ paddingHorizontal: 6 }}>
+                  <Text style={{ color: bookmarked ? COLORS.accent : COLORS.textSecondary, fontSize: 18 }}>
+                    {bookmarked ? "★ Bookmarked" : "☆ Bookmark"}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          );
+        }}
       />
     </View>
   );

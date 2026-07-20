@@ -1,157 +1,106 @@
-import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, ActivityIndicator } from "react-native";
-
-import * as Location from "expo-location";
+// src/app/qibla.tsx
 import { Magnetometer } from "expo-sensors";
-import { getGreatCircleBearing } from "geolib";
+import React, { useEffect, useRef, useState } from "react";
+import { Animated, Text, View } from "react-native";
+import Svg, { Circle, Line, Polygon } from "react-native-svg";
+import { COLORS } from "@/constants/quranMeta";
+import { useLocation } from "@/hooks/useLocation";
+import { getQiblaBearing } from "@/services/qibla";
+
+function angleToHeading(x: number, y: number) {
+  let angle = Math.atan2(y, x) * (180 / Math.PI);
+  angle = angle - 90; // adjust so 0 = north, matches typical compass orientation
+  return (angle + 360) % 360;
+}
 
 export default function QiblaScreen() {
-  const [qibla, setQibla] = useState(0);
+  const { latitude, longitude, loading, permissionDenied } = useLocation();
   const [heading, setHeading] = useState(0);
-  const [loading, setLoading] = useState(true);
-
-  const kaaba = {
-    latitude: 21.4225,
-    longitude: 39.8262,
-  };
+  const rotation = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    getQibla();
-    startCompass();
-
-    return () => {
-      Magnetometer.removeAllListeners();
-    };
+    Magnetometer.setUpdateInterval(150);
+    const sub = Magnetometer.addListener((data) => {
+      const h = angleToHeading(data.x, data.y);
+      setHeading(h);
+    });
+    return () => sub.remove();
   }, []);
 
-  // 📍 Get Qibla direction
-  const getQibla = async () => {
-    const { status } =
-      await Location.requestForegroundPermissionsAsync();
+  const qiblaBearing = latitude != null && longitude != null ? getQiblaBearing(latitude, longitude) : null;
+  const needleRotation = qiblaBearing != null ? (qiblaBearing - heading + 360) % 360 : 0;
 
-    if (status !== "granted") return;
-
-    const loc = await Location.getCurrentPositionAsync({});
-
-    const bearing = getGreatCircleBearing(
-      {
-        latitude: loc.coords.latitude,
-        longitude: loc.coords.longitude,
-      },
-      kaaba
-    );
-
-    setQibla(bearing);
-    setLoading(false);
-  };
-
-  // 🧭 Phone compass
-  const startCompass = () => {
-    Magnetometer.setUpdateInterval(100);
-
-    Magnetometer.addListener((data) => {
-      let angle =
-        Math.atan2(data.y, data.x) * (180 / Math.PI);
-
-      angle = angle + 90;
-
-      if (angle < 0) angle += 360;
-
-      setHeading(angle);
-    });
-  };
+  useEffect(() => {
+    Animated.timing(rotation, {
+      toValue: needleRotation,
+      duration: 150,
+      useNativeDriver: true,
+    }).start();
+  }, [needleRotation]);
 
   if (loading) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" />
-        <Text>Loading Qibla...</Text>
+      <View style={{ flex: 1, backgroundColor: COLORS.bg, justifyContent: "center", alignItems: "center" }}>
+        <Text style={{ color: COLORS.textSecondary }}>Getting your location…</Text>
       </View>
     );
   }
 
-  const rotate = qibla - heading;
+  if (permissionDenied || qiblaBearing == null) {
+    return (
+      <View style={{ flex: 1, backgroundColor: COLORS.bg, justifyContent: "center", alignItems: "center", padding: 24 }}>
+        <Text style={{ color: COLORS.textPrimary, textAlign: "center" }}>
+          Location access is needed to calculate the Qibla direction from where you are.
+        </Text>
+      </View>
+    );
+  }
+
+  const isAligned = Math.abs(((needleRotation + 180) % 360) - 180) < 5;
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>🧭 Qibla Finder</Text>
+    <View style={{ flex: 1, backgroundColor: COLORS.bg, justifyContent: "center", alignItems: "center", padding: 24 }}>
+      <Text style={{ color: COLORS.textPrimary, fontSize: 22, fontWeight: "bold", marginBottom: 30 }}>
+        🕋 Qibla Direction
+      </Text>
 
-      <View style={styles.circle}>
-        <Text style={styles.north}>N</Text>
+      <View style={{ width: 260, height: 260, justifyContent: "center", alignItems: "center" }}>
+        <Svg width={260} height={260} viewBox="0 0 260 260">
+          <Circle cx={130} cy={130} r={120} stroke={COLORS.cardActive} strokeWidth={2} fill="none" />
+          <Circle cx={130} cy={130} r={4} fill={COLORS.textSecondary} />
+        </Svg>
 
-        <View
+        <Animated.View
           style={{
-            transform: [{ rotate: `${rotate}deg` }],
+            position: "absolute",
+            width: 260,
+            height: 260,
+            justifyContent: "center",
+            alignItems: "center",
+            transform: [
+              {
+                rotate: rotation.interpolate({
+                  inputRange: [0, 360],
+                  outputRange: ["0deg", "360deg"],
+                }),
+              },
+            ],
           }}
         >
-          <Text style={styles.kaaba}>🕋</Text>
-        </View>
+          <Svg width={260} height={260} viewBox="0 0 260 260">
+            <Polygon points="130,20 118,70 142,70" fill={isAligned ? COLORS.accent : COLORS.accentBlue} />
+            <Line x1={130} y1={70} x2={130} y2={130} stroke={isAligned ? COLORS.accent : COLORS.accentBlue} strokeWidth={3} />
+          </Svg>
+        </Animated.View>
       </View>
 
-      <Text style={styles.text}>
-        Qibla: {Math.round(qibla)}°
+      <Text style={{ color: isAligned ? COLORS.accent : COLORS.textSecondary, marginTop: 24, fontSize: 16 }}>
+        {isAligned ? "✓ Facing Qibla" : "Rotate your device until the arrow points up"}
       </Text>
 
-      <Text style={styles.text}>
-        Heading: {Math.round(heading)}°
-      </Text>
-
-      <Text style={styles.note}>
-        Rotate phone until Kaaba aligns
+      <Text style={{ color: COLORS.textSecondary, marginTop: 8, fontSize: 13 }}>
+        Bearing: {qiblaBearing.toFixed(1)}° from true north
       </Text>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-
-  center: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-
-  title: {
-    fontSize: 28,
-    fontWeight: "bold",
-    marginBottom: 30,
-  },
-
-  circle: {
-    width: 280,
-    height: 280,
-    borderRadius: 140,
-    borderWidth: 6,
-    borderColor: "#0a8f0a",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-
-  kaaba: {
-    fontSize: 60,
-  },
-
-  north: {
-    position: "absolute",
-    top: 10,
-    fontSize: 22,
-    fontWeight: "bold",
-    color: "red",
-  },
-
-  text: {
-    marginTop: 15,
-    fontSize: 18,
-  },
-
-  note: {
-    marginTop: 10,
-    color: "gray",
-  },
-});

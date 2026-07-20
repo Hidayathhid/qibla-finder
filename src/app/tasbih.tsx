@@ -1,417 +1,526 @@
-// import { ArrowLeft, RotateCcw } from "lucide-react";
-// import { motion } from "motion/react";
-// import { useEffect, useState } from "react";
-// import { useNavigate } from "react-router";
+// // src/app/tasbih.tsx
+// import * as Haptics from "expo-haptics";
+// import React, { useEffect, useState } from "react";
+// import { Text, TouchableOpacity, View } from "react-native";
+// import { COLORS } from "@/constants/quranMeta";
+// import { getTasbeeh, saveTasbeeh, TasbeehSession } from "@/services/storage";
 
-// export default function Tasbeeh() {
-//   const navigate = useNavigate();
-//   const [count, setCount] = useState(0);
-//   const [totalCount, setTotalCount] = useState(0);
-//   const [target, setTarget] = useState(33);
-//   const [selectedDhikr, setSelectedDhikr] = useState(0);
+// const DHIKR_OPTIONS = [
+//   { text: "SubhanAllah", target: 33 },
+//   { text: "Alhamdulillah", target: 33 },
+//   { text: "Allahu Akbar", target: 34 },
+//   { text: "Astaghfirullah", target: 100 },
+// ];
 
-//   const dhikrOptions = [
-//     { arabic: "سُبْحَانَ ٱللَّٰهِ", transliteration: "SubhanAllah", meaning: "Glory be to Allah" },
-//     { arabic: "ٱلْحَمْدُ لِلَّٰهِ", transliteration: "Alhamdulillah", meaning: "Praise be to Allah" },
-//     { arabic: "ٱللَّٰهُ أَكْبَرُ", transliteration: "Allahu Akbar", meaning: "Allah is the Greatest" },
-//     { arabic: "لَا إِلَٰهَ إِلَّا ٱللَّٰهُ", transliteration: "La ilaha illallah", meaning: "There is no god but Allah" },
-//   ];
-
-//   useEffect(() => {
-//     const saved = localStorage.getItem("tasbeeh_total");
-//     if (saved) setTotalCount(parseInt(saved));
-//   }, []);
+// export default function TasbihScreen() {
+//   const [selected, setSelected] = useState(DHIKR_OPTIONS[0]);
+//   const [session, setSession] = useState<TasbeehSession | null>(null);
 
 //   useEffect(() => {
-//     localStorage.setItem("tasbeeh_total", totalCount.toString());
-//   }, [totalCount]);
+//     getTasbeeh(selected.text, selected.target).then(setSession);
+//   }, [selected]);
 
-//   const handleCount = () => {
-//     const newCount = count + 1;
-//     setCount(newCount);
-//     setTotalCount(totalCount + 1);
-//     if (navigator.vibrate) navigator.vibrate(50);
-//     if (newCount >= target) setTimeout(() => setCount(0), 500);
-//   };
+//   const increment = async () => {
+//     if (!session) return;
+//     const updated = { ...session, count: session.count + 1 };
+//     setSession(updated);
+//     await saveTasbeeh(updated);
 
-//   const resetCount = () => setCount(0);
+//     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-//   const resetTotal = () => {
-//     if (confirm("Reset total count?")) {
-//       setTotalCount(0);
-//       setCount(0);
+//     if (updated.count > 0 && updated.count % updated.target === 0) {
+//       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 //     }
 //   };
 
+//   const reset = async () => {
+//     if (!session) return;
+//     const updated = { ...session, count: 0 };
+//     setSession(updated);
+//     await saveTasbeeh(updated);
+//   };
+
+//   if (!session) return null;
+
+//   const progress = Math.min(session.count / session.target, 1);
+
 //   return (
-//     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
-//       <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white sticky top-0 z-10 shadow-lg">
-//         <div className="flex items-center gap-4 px-4 py-4">
-//           <button onClick={() => navigate("/")} className="p-2 hover:bg-white/10 rounded-lg transition-colors">
-//             <ArrowLeft size={24} />
-//           </button>
-//           <div className="flex-1">
-//             <h1 className="text-2xl font-bold">Digital Tasbeeh</h1>
-//             <p className="text-blue-100 text-sm">التسبيح الرقمي</p>
-//           </div>
-//         </div>
-//       </div>
+//     <View style={{ flex: 1, backgroundColor: COLORS.bg, padding: 20 }}>
+//       <Text style={{ color: COLORS.textPrimary, fontSize: 26, fontWeight: "bold", marginBottom: 20 }}>
+//         📿 Tasbeeh Counter
+//       </Text>
 
-//       <div className="px-4 py-8 flex flex-col items-center">
-//         <div className="w-full max-w-md mb-8">
-//           <div className="bg-white rounded-2xl shadow-xl p-6">
-//             <p className="text-sm font-semibold text-gray-700 mb-3">Select Dhikr:</p>
-//             <div className="space-y-2">
-//               {dhikrOptions.map((dhikr, index) => (
-//                 <button
-//                   key={index}
-//                   onClick={() => setSelectedDhikr(index)}
-//                   className={`w-full p-3 rounded-xl text-left transition-all ${
-//                     selectedDhikr === index
-//                       ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-md"
-//                       : "bg-gray-50 hover:bg-gray-100 text-gray-800"
-//                   }`}
-//                 >
-//                   <p className="text-xl mb-1" style={{ fontFamily: 'serif' }}>{dhikr.arabic}</p>
-//                   <p className="text-xs opacity-90">{dhikr.meaning}</p>
-//                 </button>
-//               ))}
-//             </div>
-//           </div>
-//         </div>
-
-//         <motion.div
-//           key={selectedDhikr}
-//           initial={{ scale: 0.9, opacity: 0 }}
-//           animate={{ scale: 1, opacity: 1 }}
-//           className="bg-white rounded-2xl shadow-xl p-8 mb-8 w-full max-w-md text-center"
-//         >
-//           <p className="text-4xl leading-relaxed mb-3" style={{ fontFamily: 'serif' }}>
-//             {dhikrOptions[selectedDhikr].arabic}
-//           </p>
-//           <p className="text-lg font-semibold text-gray-700 mb-1">{dhikrOptions[selectedDhikr].transliteration}</p>
-//           <p className="text-sm text-gray-600">{dhikrOptions[selectedDhikr].meaning}</p>
-//         </motion.div>
-
-//         <motion.div key={count} initial={{ scale: 1.1 }} animate={{ scale: 1 }} transition={{ duration: 0.2 }} className="mb-8">
-//           <div className="relative">
-//             <svg className="w-64 h-64 transform -rotate-90">
-//               <circle cx="128" cy="128" r="110" stroke="#e5e7eb" strokeWidth="12" fill="none" />
-//               <circle
-//                 cx="128" cy="128" r="110"
-//                 stroke="url(#gradient)" strokeWidth="12" fill="none"
-//                 strokeLinecap="round"
-//                 strokeDasharray={`${(count / target) * 691.15} 691.15`}
-//                 className="transition-all duration-300"
-//               />
-//               <defs>
-//                 <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-//                   <stop offset="0%" stopColor="#3b82f6" />
-//                   <stop offset="100%" stopColor="#8b5cf6" />
-//                 </linearGradient>
-//               </defs>
-//             </svg>
-//             <div className="absolute inset-0 flex items-center justify-center">
-//               <div className="text-center">
-//                 <p className="text-7xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">{count}</p>
-//                 <p className="text-sm text-gray-500 mt-2">of {target}</p>
-//               </div>
-//             </div>
-//           </div>
-//         </motion.div>
-
-//         <motion.button
-//           whileTap={{ scale: 0.95 }}
-//           onClick={handleCount}
-//           className="w-64 h-64 rounded-full bg-gradient-to-br from-blue-500 via-indigo-600 to-purple-600 text-white text-2xl font-bold shadow-2xl hover:shadow-3xl transition-shadow mb-6 active:shadow-inner"
-//         >
-//           TAP
-//         </motion.button>
-
-//         <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md mb-6">
-//           <div className="flex justify-around">
-//             <div className="text-center">
-//               <p className="text-3xl font-bold text-indigo-600">{count}</p>
-//               <p className="text-sm text-gray-600">Current</p>
-//             </div>
-//             <div className="w-px bg-gray-200"></div>
-//             <div className="text-center">
-//               <p className="text-3xl font-bold text-purple-600">{totalCount}</p>
-//               <p className="text-sm text-gray-600">Total</p>
-//             </div>
-//           </div>
-//         </div>
-
-//         <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md mb-6">
-//           <p className="text-sm font-semibold text-gray-700 mb-3">Target:</p>
-//           <div className="flex gap-2">
-//             {[33, 99, 100, 1000].map((num) => (
-//               <button
-//                 key={num}
-//                 onClick={() => setTarget(num)}
-//                 className={`flex-1 py-2 px-4 rounded-lg font-semibold transition-all ${
-//                   target === num ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-//                 }`}
-//               >
-//                 {num}
-//               </button>
-//             ))}
-//           </div>
-//         </div>
-
-//         <div className="flex gap-4 w-full max-w-md">
-//           <button
-//             onClick={resetCount}
-//             className="flex-1 bg-orange-500 hover:bg-orange-600 text-white py-3 px-6 rounded-xl font-semibold shadow-lg transition-colors flex items-center justify-center gap-2"
+//       <View style={{ flexDirection: "row", flexWrap: "wrap", marginBottom: 20 }}>
+//         {DHIKR_OPTIONS.map((opt) => (
+//           <TouchableOpacity
+//             key={opt.text}
+//             onPress={() => setSelected(opt)}
+//             style={{
+//               padding: 10,
+//               paddingHorizontal: 14,
+//               borderRadius: 20,
+//               backgroundColor: selected.text === opt.text ? COLORS.accent : COLORS.card,
+//               marginRight: 8,
+//               marginBottom: 8,
+//             }}
 //           >
-//             <RotateCcw size={20} /> Reset Current
-//           </button>
-//           <button
-//             onClick={resetTotal}
-//             className="flex-1 bg-red-500 hover:bg-red-600 text-white py-3 px-6 rounded-xl font-semibold shadow-lg transition-colors flex items-center justify-center gap-2"
-//           >
-//             <RotateCcw size={20} /> Reset Total
-//           </button>
-//         </div>
-//       </div>
-//     </div>
+//             <Text style={{ color: COLORS.textPrimary }}>{opt.text}</Text>
+//           </TouchableOpacity>
+//         ))}
+//       </View>
+
+//       <TouchableOpacity
+//         onPress={increment}
+//         activeOpacity={0.8}
+//         style={{
+//           flex: 1,
+//           backgroundColor: COLORS.card,
+//           borderRadius: 24,
+//           justifyContent: "center",
+//           alignItems: "center",
+//           marginBottom: 20,
+//         }}
+//       >
+//         <Text style={{ color: COLORS.textSecondary, fontSize: 16, marginBottom: 6 }}>{selected.text}</Text>
+//         <Text style={{ color: COLORS.textPrimary, fontSize: 72, fontWeight: "bold" }}>{session.count}</Text>
+//         <Text style={{ color: COLORS.textSecondary, fontSize: 14, marginTop: 6 }}>
+//           Target: {session.target}
+//         </Text>
+
+//         <View style={{ width: "70%", height: 6, backgroundColor: COLORS.cardActive, borderRadius: 3, marginTop: 20 }}>
+//           <View
+//             style={{
+//               width: `${progress * 100}%`,
+//               height: 6,
+//               backgroundColor: COLORS.accent,
+//               borderRadius: 3,
+//             }}
+//           />
+//         </View>
+
+//         <Text style={{ color: COLORS.textSecondary, marginTop: 20, fontSize: 13 }}>Tap anywhere to count</Text>
+//       </TouchableOpacity>
+
+//       <TouchableOpacity
+//         onPress={reset}
+//         style={{
+//           backgroundColor: COLORS.cardActive,
+//           padding: 14,
+//           borderRadius: 12,
+//           alignItems: "center",
+//         }}
+//       >
+//         <Text style={{ color: COLORS.textPrimary, fontWeight: "600" }}>Reset</Text>
+//       </TouchableOpacity>
+//     </View>
 //   );
 // }
 
 
-import AsyncStorage from "@react-native-async-storage/async-storage";
+// src/app/tasbih.tsx
+
+import * as Haptics from "expo-haptics";
 import React, { useEffect, useState } from "react";
 import {
-    Alert,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    Vibration,
-    View,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
-export default function Tasbeeh() {
-  const [count, setCount] = useState(0);
-  const [totalCount, setTotalCount] = useState(0);
-  const [target, setTarget] = useState(33);
-  const [selectedDhikr, setSelectedDhikr] = useState(0);
+import { COLORS } from "@/constants/quranMeta";
+import { getTasbeeh, saveTasbeeh, TasbeehSession } from "@/services/storage";
 
-  const dhikrOptions = [
-    { arabic: "سُبْحَانَ ٱللَّٰهِ", meaning: "Glory be to Allah" },
-    { arabic: "ٱلْحَمْدُ لِلَّٰهِ", meaning: "Praise be to Allah" },
-    { arabic: "ٱللَّٰهُ أَكْبَرُ", meaning: "Allah is the Greatest" },
-    { arabic: "لَا إِلَٰهَ إِلَّا ٱللَّٰهُ", meaning: "No god but Allah" },
-  ];
+const DHIKR_OPTIONS = [
+  {
+    text: "SubhanAllah",
+    arabic: "سُبْحَانَ ٱللَّٰهِ",
+    meaning: "Glory be to Allah",
+    target: 33,
+  },
+  {
+    text: "Alhamdulillah",
+    arabic: "ٱلْحَمْدُ لِلَّٰهِ",
+    meaning: "Praise be to Allah",
+    target: 33,
+  },
+  {
+    text: "Allahu Akbar",
+    arabic: "ٱللَّٰهُ أَكْبَرُ",
+    meaning: "Allah is the Greatest",
+    target: 34,
+  },
+  {
+    text: "Astaghfirullah",
+    arabic: "أَسْتَغْفِرُ ٱللَّٰهَ",
+    meaning: "I seek forgiveness from Allah",
+    target: 100,
+  },
+];
+
+export default function TasbihScreen() {
+  const [selected, setSelected] = useState(DHIKR_OPTIONS[0]);
+  const [session, setSession] = useState<TasbeehSession | null>(null);
 
   useEffect(() => {
-    loadData();
-  }, []);
+    getTasbeeh(selected.text, selected.target).then(setSession);
+  }, [selected]);
 
-  useEffect(() => {
-    AsyncStorage.setItem("tasbeeh_total", totalCount.toString());
-  }, [totalCount]);
+  const increment = async () => {
+    if (!session) return;
 
-  const loadData = async () => {
-    const saved = await AsyncStorage.getItem("tasbeeh_total");
-    if (saved) setTotalCount(parseInt(saved));
-  };
+    const updated = {
+      ...session,
+      count: session.count + 1,
+    };
 
-  const handleCount = () => {
-    const newCount = count + 1;
-    setCount(newCount);
-    setTotalCount(totalCount + 1);
+    setSession(updated);
+    await saveTasbeeh(updated);
 
-    Vibration.vibrate(50);
+    Haptics.impactAsync(
+      Haptics.ImpactFeedbackStyle.Medium
+    );
 
-    if (newCount >= target) {
-      setTimeout(() => setCount(0), 300);
+    if (updated.count > 0 && updated.count % updated.target === 0) {
+      Haptics.notificationAsync(
+        Haptics.NotificationFeedbackType.Success
+      );
     }
   };
 
-  const resetCount = () => setCount(0);
 
-  const resetTotal = () => {
-    Alert.alert("Reset", "Reset total count?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Yes",
-        onPress: () => {
-          setTotalCount(0);
-          setCount(0);
+  const reset = async () => {
+    if (!session) return;
+
+    Alert.alert(
+      "Reset Tasbeeh",
+      "Reset current count?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
         },
-      },
-    ]);
+        {
+          text: "Reset",
+          onPress: async () => {
+            const updated = {
+              ...session,
+              count: 0,
+            };
+
+            setSession(updated);
+            await saveTasbeeh(updated);
+          },
+        },
+      ]
+    );
   };
 
+
+  if (!session) return null;
+
+
+  const progress = Math.min(
+    session.count / session.target,
+    1
+  );
+
+
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView
+      style={styles.container}
+      showsVerticalScrollIndicator={false}
+    >
 
       {/* HEADER */}
-      <Text style={styles.title}>🕌 Digital Tasbeeh</Text>
+      <Text style={styles.title}>
+        📿 Digital Tasbeeh
+      </Text>
+
 
       {/* DHIKR SELECT */}
       <View style={styles.box}>
-        {dhikrOptions.map((d, i) => (
+
+        {DHIKR_OPTIONS.map((item) => (
+
           <TouchableOpacity
-            key={i}
+            key={item.text}
+            onPress={() => setSelected(item)}
             style={[
               styles.dhikrBtn,
-              selectedDhikr === i && styles.selected,
+              selected.text === item.text &&
+              styles.selected,
             ]}
-            onPress={() => setSelectedDhikr(i)}
           >
-            <Text style={styles.arabic}>{d.arabic}</Text>
-            <Text style={styles.meaning}>{d.meaning}</Text>
+
+            <Text style={styles.arabic}>
+              {item.arabic}
+            </Text>
+
+            <Text style={styles.meaning}>
+              {item.text}
+            </Text>
+
           </TouchableOpacity>
+
         ))}
+
       </View>
 
-      {/* COUNTER */}
-      <View style={styles.counterBox}>
-        <Text style={styles.count}>{count}</Text>
-        <Text style={styles.target}>of {target}</Text>
-      </View>
 
-      {/* TAP BUTTON */}
-      <TouchableOpacity style={styles.tapBtn} onPress={handleCount}>
-        <Text style={styles.tapText}>TAP</Text>
+
+      {/* COUNTER CARD */}
+
+      <TouchableOpacity
+        activeOpacity={0.85}
+        onPress={increment}
+        style={styles.counterCard}
+      >
+
+        <Text style={styles.currentDhikr}>
+          {selected.text}
+        </Text>
+
+
+        <Text style={styles.count}>
+          {session.count}
+        </Text>
+
+
+        <Text style={styles.target}>
+          Target : {session.target}
+        </Text>
+
+
+        {/* PROGRESS */}
+
+        <View style={styles.progressBg}>
+          <View
+            style={[
+              styles.progress,
+              {
+                width: `${progress * 100}%`,
+              },
+            ]}
+          />
+        </View>
+
+
+        <Text style={styles.tapText}>
+          Tap anywhere to count
+        </Text>
+
       </TouchableOpacity>
 
-      {/* TOTAL */}
+
+
+      {/* TOTAL INFO */}
+
       <View style={styles.row}>
-        <Text style={styles.smallText}>Current: {count}</Text>
-        <Text style={styles.smallText}>Total: {totalCount}</Text>
+
+        <Text style={styles.info}>
+          Current: {session.count}
+        </Text>
+
+        <Text style={styles.info}>
+          Target: {session.target}
+        </Text>
+
       </View>
+
+
 
       {/* TARGET BUTTONS */}
+
       <View style={styles.row}>
-        {[33, 99, 100, 1000].map((n) => (
+
+        {[33, 34, 99, 100].map((num) => (
+
           <TouchableOpacity
-            key={n}
+            key={num}
+            onPress={() =>
+              setSelected({
+                ...selected,
+                target: num,
+              })
+            }
             style={[
               styles.targetBtn,
-              target === n && styles.selectedTarget,
+              selected.target === num &&
+              styles.activeTarget,
             ]}
-            onPress={() => setTarget(n)}
           >
-            <Text style={{ color: "white" }}>{n}</Text>
+
+            <Text style={styles.white}>
+              {num}
+            </Text>
+
           </TouchableOpacity>
+
         ))}
+
       </View>
+
+
 
       {/* RESET */}
-      <View style={styles.row}>
-        <TouchableOpacity style={styles.reset} onPress={resetCount}>
-          <Text style={{ color: "white" }}>Reset</Text>
-        </TouchableOpacity>
 
-        <TouchableOpacity style={styles.resetRed} onPress={resetTotal}>
-          <Text style={{ color: "white" }}>Reset Total</Text>
-        </TouchableOpacity>
-      </View>
+      <TouchableOpacity
+        onPress={reset}
+        style={styles.reset}
+      >
+
+        <Text style={styles.white}>
+          Reset Count
+        </Text>
+
+      </TouchableOpacity>
+
 
     </ScrollView>
   );
 }
 
+
+
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#0b1220",
-    padding: 15,
+
+  container:{
+    flex:1,
+    backgroundColor:COLORS.bg,
+    padding:15,
   },
 
-  title: {
-    fontSize: 24,
-    color: "white",
-    textAlign: "center",
-    marginVertical: 20,
+
+  title:{
+    color:COLORS.textPrimary,
+    fontSize:26,
+    fontWeight:"bold",
+    textAlign:"center",
+    marginVertical:20,
   },
 
-  box: {
-    backgroundColor: "#1e293b",
-    padding: 10,
-    borderRadius: 10,
+
+  box:{
+    backgroundColor:COLORS.card,
+    borderRadius:12,
+    padding:10,
   },
 
-  dhikrBtn: {
-    padding: 10,
-    marginVertical: 5,
-    backgroundColor: "#334155",
-    borderRadius: 8,
+
+  dhikrBtn:{
+    backgroundColor:COLORS.cardActive,
+    padding:12,
+    borderRadius:10,
+    marginBottom:8,
   },
 
-  selected: {
-    backgroundColor: "#2563eb",
+
+  selected:{
+    backgroundColor:COLORS.accent,
   },
 
-  arabic: {
-    color: "white",
-    fontSize: 18,
+
+  arabic:{
+    color:COLORS.textPrimary,
+    fontSize:22,
   },
 
-  meaning: {
-    color: "#94a3b8",
+
+  meaning:{
+    color:COLORS.textSecondary,
+    marginTop:4,
   },
 
-  counterBox: {
-    alignItems: "center",
-    marginVertical: 20,
+
+  counterCard:{
+    backgroundColor:COLORS.card,
+    marginTop:20,
+    borderRadius:24,
+    padding:30,
+    alignItems:"center",
   },
 
-  count: {
-    fontSize: 60,
-    color: "white",
+
+  currentDhikr:{
+    color:COLORS.textSecondary,
+    fontSize:18,
   },
 
-  target: {
-    color: "#94a3b8",
+
+  count:{
+    color:COLORS.textPrimary,
+    fontSize:80,
+    fontWeight:"bold",
+    marginVertical:15,
   },
 
-  tapBtn: {
-    backgroundColor: "#2563eb",
-    padding: 30,
-    borderRadius: 100,
-    alignItems: "center",
-    marginVertical: 20,
+
+  target:{
+    color:COLORS.textSecondary,
   },
 
-  tapText: {
-    color: "white",
-    fontSize: 20,
-    fontWeight: "bold",
+
+  progressBg:{
+    width:"80%",
+    height:8,
+    backgroundColor:COLORS.cardActive,
+    borderRadius:10,
+    marginTop:25,
   },
 
-  row: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginVertical: 10,
+
+  progress:{
+    height:8,
+    backgroundColor:COLORS.accent,
+    borderRadius:10,
   },
 
-  smallText: {
-    color: "white",
+
+  tapText:{
+    color:COLORS.textSecondary,
+    marginTop:20,
   },
 
-  targetBtn: {
-    padding: 10,
-    backgroundColor: "#334155",
-    borderRadius: 8,
+
+  row:{
+    flexDirection:"row",
+    justifyContent:"space-between",
+    marginVertical:15,
   },
 
-  selectedTarget: {
-    backgroundColor: "#22c55e",
+
+  info:{
+    color:COLORS.textPrimary,
   },
 
-  reset: {
-    backgroundColor: "#f97316",
-    padding: 10,
-    borderRadius: 8,
+
+  targetBtn:{
+    backgroundColor:COLORS.cardActive,
+    padding:12,
+    borderRadius:10,
   },
 
-  resetRed: {
-    backgroundColor: "#ef4444",
-    padding: 10,
-    borderRadius: 8,
+
+  activeTarget:{
+    backgroundColor:COLORS.accent,
   },
+
+
+  reset:{
+    backgroundColor:"#ef4444",
+    padding:15,
+    borderRadius:12,
+    alignItems:"center",
+    marginBottom:20,
+  },
+
+
+  white:{
+    color:"#fff",
+    fontWeight:"bold",
+  },
+
 });

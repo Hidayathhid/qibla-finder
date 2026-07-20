@@ -1,0 +1,135 @@
+// {
+//   "expo": {
+//     "name": "qibla-finder",
+//     "slug": "qibla-finder",
+//     "version": "1.0.0",
+//     "orientation": "portrait",
+//     "icon": "./assets/images/icon.png",
+//     "scheme": "qiblafinder",
+//     "userInterfaceStyle": "automatic",
+//     "ios": {
+//       "icon": "./assets/expo.icon"
+//     },
+//     "android": {
+//       "adaptiveIcon": {
+//         "backgroundColor": "#E6F4FE",
+//         "foregroundImage": "./assets/images/android-icon-foreground.png",
+//         "backgroundImage": "./assets/images/android-icon-background.png",
+//         "monochromeImage": "./assets/images/android-icon-monochrome.png"
+//       },
+//       "predictiveBackGestureEnabled": false,
+//       "package": "com.hidayathhid.qiblafinder"
+//     },
+//     "web": {
+//       "output": "static",
+//       "favicon": "./assets/images/favicon.png"
+//     },
+//     "plugins": [
+//       "expo-router",
+//       [
+//         "expo-splash-screen",
+//         {
+//           "backgroundColor": "#208AEF",
+//           "android": {
+//             "image": "./assets/images/splash-icon.png",
+//             "imageWidth": 76
+//           }
+//         }
+//       ]
+//     ],
+//     "experiments": {
+//       "typedRoutes": true,
+//       "reactCompiler": true
+//     },
+//     "extra": {
+//       "router": {},
+//       "eas": {
+//         "projectId": "230cbaa0-23d1-4fa6-9972-aee649fcb05c"
+//       }
+//     },
+//     "owner": "hidayathhid"
+//   }
+// }
+
+
+```json
+{
+  "expo": {
+    "name": "qibla-finder",
+    "slug": "qibla-finder",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "qiblafinder",
+    "userInterfaceStyle": "automatic",
+
+    "ios": {
+      "icon": "./assets/expo.icon"
+    },
+
+    "android": {
+      "package": "com.hidayathhid.qiblafinder",
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION"
+      ],
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/images/android-icon-foreground.png",
+        "backgroundImage": "./assets/images/android-icon-background.png",
+        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+      }
+    },
+
+    "web": {
+      "output": "static",
+      "favicon": "./assets/images/favicon.png"
+    },
+
+    "plugins": [
+      "expo-router",
+
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#208AEF",
+          "android": {
+            "image": "./assets/images/splash-icon.png",
+            "imageWidth": 76
+          }
+        }
+      ],
+
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location to calculate accurate prayer times, Qibla direction, and find nearby mosques."
+        }
+      ],
+
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#22c55e"
+        }
+      ]
+    ],
+
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    },
+
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "230cbaa0-23d1-4fa6-9972-aee649fcb05c"
+      }
+    },
+
+    "owner": "hidayathhid"
+  }
+}
+```
